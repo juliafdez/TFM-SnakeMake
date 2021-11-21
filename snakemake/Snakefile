@@ -1,59 +1,65 @@
-SAMPLES = ["A"]
-
+SAMPLES = ["A","B"]
+#Workflow con ficheros fastqc ejemplo.
+#Cambiar por los reales para las pruebas
 rule all:
     input:
-        "trimmed/A.1_val_1.fq.gz",
-        "trimmed/A.1.fastq.gz_trimming_report.txt"
+        "qc/fastqc/A.html",
+        "qc/fastqc/B.html",
+        "bismark/A_bismark_pe.bam"
 
 rule fastqc:
     input:
-        "data/samples/A.fastq"
+        "data/samples/{sample}.fastq"
     output:
         html="qc/fastqc/{sample}.html",
         zip="qc/fastqc/{sample}_fastqc.zip"
-        # the suffix _fastqc.zip is necessary for multiqc to find the file. If not using multiqc,
-        #you are free to choose an arbitrary filename
     params: "--quiet"
     log:
-        "logs/fastqc/{sample}.log"
+        "logs/fastqc/{sample}_fastqc.log"
     threads: 1
     wrapper:
         "v0.80.1/bio/fastqc"
 
-rule trim_galore_pe:
-    input:
-        ["data/samples/{sample}.fastq.gz"],
-    output:
-        "trimmed/{sample}.1_val_1.fq.gz",
-        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
-    params:
-        extra="--illumina -q 20",
-    log:
-        "logs/trim_galore/{sample}.log",
-    wrapper:
-        "v0.80.1/bio/trim_galore/pe"
+#rule trim_galore_se:
+#    input:
+#        "data/samples/{sample}.fastq.gz",
+#    output:
+#        "trimmed/{sample}.fq.gz",
+##        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
+#    params:
+#        extra="--illumina -q 20",
+#    log:
+#        "logs/trim_galore/{sample}.log",
+#    wrapper:
+#        "v0.80.1/bio/trim_galore/se"
+#
+#rule run_multiqc:
+#    input:
+#        "trimmed/A.fq.gz",
+#        "trimmed/B.fq.gz"
+#    output:
+#        "qc/fastqc/multiqc_report.html"
+#    shell:
+#        "multiqc qc/fastqc/"
+#
 
-# Example: Single-ended reads
-rule bismark_se:
+rule bismark_align:
+    message: "Performing alignment..."
     input:
-        fq="data/samples/{sample}.fastq.gz",
-        genome="data/{genome}.fa",
-        bismark_indexes_dir="indexes/{genome}/Bisulfite_Genome",
-        genomic_freq="indexes/{genome}/genomic_nucleotide_frequencies.txt"
+        "data/samples/{sample}.fastq.gz"
     output:
-        bam="bams/{sample}_{genome}.bam",
-        report="bams/{sample}_{genome}_SE_report.txt",
-        nucleotide_stats="bams/{sample}_{genome}.nucleotide_stats.txt",
-        bam_unmapped="bams/{sample}_{genome}_unmapped_reads.fq.gz",
-        ambiguous="bams/{sample}_{genome}_ambiguous_reads.fq.gz"
+        "bismark/{sample}_bismark_pe.bam",
+        "bismark/{sample}_bismark_PE_report.txt",
+        "bismark/{sample}_bismark_pe.nucleotide_stats.txt"
     log:
-        "logs/bams/{sample}_{genome}.log",
+        "logs/bismark/{sample}.log",
     params:
         # optional params string
         extra=' --ambiguous --unmapped --nucleotide_coverage',
         basename='{sample}_{genome}'
     wrapper:
         "v0.80.1/bio/bismark/bismark"
+
 
 #rule qualimap:
 #    input:

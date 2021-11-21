@@ -1,0 +1,150 @@
+SAMPLES = ["A", "B"]
+
+
+rule all:
+    input:
+        "plots/quals.svg"
+
+
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        "data/samples/{sample}.fastq"
+    output:
+        "mapped_reads/{sample}.bam"
+    shell:
+        "bwa mem {input} | samtools view -Sb - > {output}"
+
+
+rule samtools_sort:
+    input:
+        "mapped_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam"
+    shell:
+        "samtools sort -T sorted_reads/{wildcards.sample} "
+        "-O bam {input} > {output}"
+
+
+rule samtools_index:
+    input:
+        "sorted_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam.bai"
+    shell:
+        "samtools index {input}"
+
+
+rule bcftools_call:
+    input:
+        fa="data/genome.fa",
+        bam=expand("sorted_reads/{sample}.bam", sample=SAMPLES),
+        bai=expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES)
+    output:
+        "calls/all.vcf"
+    shell:
+        "samtools mpileup -g -f {input.fa} {input.bam} | "
+        "bcftools call -mv - > {output}"
+
+
+rule plot_quals:
+    input:
+        "calls/all.vcf"
+    output:
+        "plots/quals.svg"
+    script:
+        "scripts/plot-quals.py"
+-------------------------------------------
+SAMPLES = ["A"]
+
+rule all:
+    input:
+        "trimmed/A.1_val_1.fq.gz",
+        "trimmed/A.1.fastq.gz_trimming_report.txt"
+
+        ######
+
+rule trim_galore_se:
+    input:
+        "data/samples/{sample}.fastq.gz",
+    output:
+        "trimmed/{sample}.1_val_1.fq.gz",
+        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
+    params:
+        extra="--illumina -q 20",
+    log:
+        "logs/trim_galore/{sample}.log",
+    wrapper:
+        "v0.80.1/bio/trim_galore/se"
+
+rule fastqc_trim:
+    input:
+        "trimmed/{sample}.1_val_1.fq.gz"
+    output:
+        html="qc/fastqc/{sample}.html",
+        zip="qc/fastqc/{sample}_fastqc.zip"
+        # the suffix _fastqc.zip is necessary for multiqc to find the file. If not using multiqc,
+        #you are free to choose an arbitrary filename
+    params: "--quiet"
+    log:
+        "logs/fastqc/{sample}_fastqctrim.log"
+    threads: 1
+    wrapper:
+        "v0.80.1/bio/fastqc"
+
+# Example: Single-ended reads
+rule bismark_se:
+    input:
+        fq="data/samples/{sample}.fastq.gz",
+        genome="data/{genome}.fa",
+        bismark_indexes_dir="indexes/{genome}/Bisulfite_Genome",
+        genomic_freq="indexes/{genome}/genomic_nucleotide_frequencies.txt"
+    output:
+        bam="bams/{sample}_{genome}.bam",
+        report="bams/{sample}_{genome}_SE_report.txt",
+        nucleotide_stats="bams/{sample}_{genome}.nucleotide_stats.txt",
+        bam_unmapped="bams/{sample}_{genome}_unmapped_reads.fq.gz",
+        ambiguous="bams/{sample}_{genome}_ambiguous_reads.fq.gz"
+    log:
+        "logs/bams/{sample}_{genome}.log",
+    params:
+        # optional params string
+        extra=' --ambiguous --unmapped --nucleotide_coverage',
+        basename='{sample}_{genome}'
+    wrapper:
+        "v0.80.1/bio/bismark/bismark"
+
+#rule qualimap:
+#    input:
+#        # BAM aligned, splicing-aware, to reference genome
+#        bam="mapped/a.bam",
+#        # GTF containing transcript, gene, and exon data
+#        gtf="annotation.gtf"
+#    output:
+#        directory("qc/a")
+#    log:
+#        "logs/qualimap/rna-seq/a.log"
+#    wrapper:
+#        "v0.80.1/bio/qualimap/rnaseq"
+#
+#rule mark_duplicates:
+#    input:
+#        "mapped/{sample}.bam"
+    # optional to specify a list of BAMs; this has the same effect
+    # of marking duplicates on separate read groups for a sample
+    # and then merging
+#    output:
+#        bam="dedup/{sample}.bam",
+#        metrics="dedup/{sample}.metrics.txt"
+#    log:
+#        "logs/picard/dedup/{sample}.log"
+#    params:
+#        extra="REMOVE_DUPLICATES=true"
+    # optional specification of memory usage of the JVM that snakemake will respect with global
+    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
+    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
+    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
+#    resources:
+#        mem_mb=1024
+#    wrapper:
+#        "v0.80.1/bio/picard/markduplicates"
