@@ -4,10 +4,12 @@ SAMPLES = ["A","B"]
 rule all:
     input:
         "qc/fastqc/A.html",
-        "qc/fastqc/B.html",
-        "bismark/A_bismark_pe.bam"
+        "qc/fastqc/multiqc_report.html",
+        "logs/bismark/A.log",
+        '/qualimap/A_qualimapReport.html'
 
 rule fastqc:
+    message: "Performing FastQC..."
     input:
         "data/samples/{sample}.fastq"
     output:
@@ -20,33 +22,36 @@ rule fastqc:
     wrapper:
         "v0.80.1/bio/fastqc"
 
-#rule trim_galore_se:
-#    input:
-#        "data/samples/{sample}.fastq.gz",
-#    output:
-#        "trimmed/{sample}.fq.gz",
-##        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
-#    params:
-#        extra="--illumina -q 20",
-#    log:
-#        "logs/trim_galore/{sample}.log",
-#    wrapper:
-#        "v0.80.1/bio/trim_galore/se"
-#
-#rule run_multiqc:
-#    input:
-#        "trimmed/A.fq.gz",
-#        "trimmed/B.fq.gz"
-#    output:
-#        "qc/fastqc/multiqc_report.html"
-#    shell:
-#        "multiqc qc/fastqc/"
-#
+rule trim_galore_se:
+    message: "Performing Trimming..."
+    input:
+        "data/samples/{sample}.fastq",
+    output:
+        "trimmed/{sample}.fq.gz",
+        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
+    params:
+        extra="--illumina -q 20",
+    log:
+        "logs/trim_galore/{sample}.log",
+    wrapper:
+            "v0.80.1/bio/trim_galore/se"
+
+rule run_multiqc:
+    input:
+        "trimmed/A.fq.gz",
+        "data/samples/A.fastq"
+        #"trimmed/B.fq.gz"
+    output:
+        "qc/fastqc/multiqc_report.html"
+    shell:
+        "multiqc qc/fastqc/"
+
 
 rule bismark_align:
     message: "Performing alignment..."
     input:
-        "data/samples/{sample}.fastq.gz"
+        "data/samples/{sample}.fastq",
+        "data/genome.fa"
     output:
         "bismark/{sample}_bismark_pe.bam",
         "bismark/{sample}_bismark_PE_report.txt",
@@ -56,24 +61,30 @@ rule bismark_align:
     params:
         # optional params string
         extra=' --ambiguous --unmapped --nucleotide_coverage',
-        basename='{sample}_{genome}'
+        basename='{sample}_'
     wrapper:
         "v0.80.1/bio/bismark/bismark"
 
-
-#rule qualimap:
+#rule bwa_map:
 #    input:
-#        # BAM aligned, splicing-aware, to reference genome
-#        bam="mapped/a.bam",
-#        # GTF containing transcript, gene, and exon data
-#        gtf="annotation.gtf"
+#        "data/genome.fa",
+#        "data/samples/{sample}.fastq"
 #    output:
-#        directory("qc/a")
-#    log:
-#        "logs/qualimap/rna-seq/a.log"
-#    wrapper:
-#        "v0.80.1/bio/qualimap/rnaseq"
-#
+#        "mapped_reads/{sample}.bam"
+#    shell:
+#        "bwa mem {input} | samtools view -Sb - > {output}"
+
+
+rule qualimap:
+    input:
+        # BAM aligned, splicing-aware, to reference genome
+        "bismark/{sample}_bismark_pe.bam",
+        # GTF containing transcript, gene, and exon data
+    output:
+        '/qualimap/{sample}_qualimapReport.html'
+    wrapper:
+        "v0.80.1/bio/bismark/bismark"
+
 #rule mark_duplicates:
 #    input:
 #        "mapped/{sample}.bam"
@@ -87,10 +98,6 @@ rule bismark_align:
 #        "logs/picard/dedup/{sample}.log"
 #    params:
 #        extra="REMOVE_DUPLICATES=true"
-    # optional specification of memory usage of the JVM that snakemake will respect with global
-    # resource restrictions (https://snakemake.readthedocs.io/en/latest/snakefiles/rules.html#resources)
-    # and which can be used to request RAM during cluster job submission as `{resources.mem_mb}`:
-    # https://snakemake.readthedocs.io/en/latest/executing/cluster.html#job-properties
 #    resources:
 #        mem_mb=1024
 #    wrapper:
