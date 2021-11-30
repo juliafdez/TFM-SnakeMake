@@ -11,14 +11,13 @@ rule all:
 #        "qc/fastqc/bsseq_sample1_R1.html",
 #        "mapped_reads/bsseq_sample1_R1.bam"
 #        "trimmed/bsseq_sample1_R1.fastq.gz"
-        "qualimap/bsseq_sample1_R1_qualimapReport.html"
-#        expand("trimmed/{sample}.fq.gz", sample=config["samples"])
 #        "qc/multiqc.html"
-#        "saved/Bisulfite_Genome"
-#        "saved/genomic_nucleotide_frequencies.txt"
+#        "data/Bisulfite_Genome",
+#        "data/genomic_nucleotide_frequencies.txt"
 #        "bams/bsseq_sample1_R1.bam"
-#        "bismark/A_bismark_pe.bam"
-#        "logs/bismark/A.log"
+        "meth/bsseq_sample1_R1.M-bias.txt"
+#        "qualimap/bsseq_sample1_R1_qualimapReport.html"
+#        "dedup/bsseq_sample1_R1.bam"
 
 rule fastqc:
     message: "Performing FastQC..."
@@ -87,7 +86,7 @@ rule bismark_genome_preparation_fa:
     input:
         read="data/genome.fa"
     output:
-        "data/Bisulfite_Genome"
+        directory("data/Bisulfite_Genome")
     log:
         "logs/indexes/Bisulfite_Genome.log"
     wrapper:
@@ -144,6 +143,33 @@ rule bismark_align:
 #        # optional params string
 #        extra=' --ambiguous --unmapped --nucleotide_coverage',
 
+rule bismark_methylation_extractor:
+    input: "bams/{sample}.bam"
+    output:
+        mbias_r1="qc/meth/{sample}.M-bias_R1.png",
+        # Only for PE BAMS:
+        # mbias_r2="qc/meth/{sample}.M-bias_R2.png",
+
+        mbias_report="meth/{sample}.M-bias.txt",
+        splitting_report="meth/{sample}_splitting_report.txt",
+
+        # 1-based start, 1-based end ('inclusive') methylation info: % and counts
+        methylome_CpG_cov="meth_cpg/{sample}.bismark.cov.gz",
+        # BedGraph with methylation percentage: 0-based start, end exclusive
+        methylome_CpG_mlevel_bedGraph="meth_cpg/{sample}.bedGraph.gz",
+
+        # Primary output files: methylation status at each read cytosine position: (extremely large)
+        read_base_meth_state_cpg="meth/CpG_context_{sample}.txt.gz",
+        # * You could merge CHG, CHH using: --merge_non_CpG
+        read_base_meth_state_chg="meth/CHG_context_{sample}.txt.gz",
+        read_base_meth_state_chh="meth/CHH_context_{sample}.txt.gz"
+    log:
+        "logs/meth/{sample}.log"
+    params:
+        output_dir="meth",  # optional output dir
+        extra="--gzip --comprehensive --bedGraph"  # optional params string
+    wrapper:
+        "0.80.2/bio/bismark/bismark_methylation_extractor"
 
 rule qualimap:
     input:
@@ -153,6 +179,26 @@ rule qualimap:
         # GTF containing transcript, gene, and exon data
     output:
         "qualimap/{sample}_qualimapReport.html"
-
+    log:
+        "logs/qualimap/{sample}.log"
     wrapper:
         "0.80.2/bio/qualimap/rnaseq"
+
+#paso opcional deduplicates con picard
+rule mark_duplicates:
+    input:
+        "bams/{sample}.bam"
+    # optional to specify a list of BAMs; this has the same effect
+    # of marking duplicates on separate read groups for a sample
+    # and then merging
+    output:
+        bam="dedup/{sample}.bam",
+        metrics="dedup/{sample}.metrics.txt"
+    log:
+        "logs/picard/dedup/{sample}.log"
+    params:
+        extra="REMOVE_DUPLICATES=true"
+    resources:
+        mem_mb=1024
+    wrapper:
+        "0.80.2/bio/picard/markduplicates"
