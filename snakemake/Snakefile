@@ -87,7 +87,7 @@ rule bismark_genome_preparation_fa:
     input:
         read="data/genome.fa"
     output:
-        "saved/Bisulfite_Genome"
+        "data/Bisulfite_Genome"
     log:
         "logs/indexes/Bisulfite_Genome.log"
     wrapper:
@@ -97,7 +97,7 @@ rule bam2nuc_for_genome:
     input:
         genome_fa="data/genome.fa"
     output:
-        "saved/genomic_nucleotide_frequencies.txt"
+        "data/genomic_nucleotide_frequencies.txt"
     log:
         "logs/indexes/genome/genomic_nucleotide_frequencies.txt.log"
     wrapper:
