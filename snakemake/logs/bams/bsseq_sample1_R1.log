@@ -1,0 +1,168 @@
+Bowtie 2 seems to be working fine (tested command 'bowtie2 --version' [2.4.2])
+Output format is BAM (default)
+Alignments will be written out in BAM format. Samtools found here: '/home/julia/github/TFM-SnakeMake/snakemake/.snakemake/conda/a966d1f83a5f680e71882dce809a88e1/bin/samtools'
+Reference genome folder provided is data/	(absolute path is '/home/julia/github/TFM-SnakeMake/snakemake/data/)'
+FastQ format assumed (by default)
+Mapping set to single-end mode (user defined). File names need to be separated by commas [,] or colons [:]! Supplied file names are: data/samples/bsseq_sample1_R1.fastq.gz
+
+Input files to be analysed (in current folder '/home/julia/github/TFM-SnakeMake/snakemake'):
+data/samples/bsseq_sample1_R1.fastq.gz
+Library is assumed to be strand-specific (directional), alignments to strands complementary to the original top or bottom strands will be ignored (i.e. not performed!)
+Output will be written into the directory: /home/julia/github/TFM-SnakeMake/snakemake/bams/
+Setting parallelization to single-threaded (default)
+
+Summary of all aligner options:	-q --score-min L,0,-0.2 --ignore-quals
+Current working directory is: /home/julia/github/TFM-SnakeMake/snakemake
+
+Now reading in and storing sequence information of the genome specified in: /home/julia/github/TFM-SnakeMake/snakemake/data/
+
+chr chloroplast (155461 bp)
+chr I (230218 bp)
+
+Single-core mode: setting pid to 1
+
+Single-end alignments will be performed
+=======================================
+
+Input file is in FastQ format
+Writing a C -> T converted version of the input file bsseq_sample1_R1.fastq.gz to bsseq_sample1_R1.fastq.gz_C_to_T.fastq
+
+Created C -> T converted version of the FastQ file bsseq_sample1_R1.fastq.gz (5000 sequences in total)
+
+Input file is bsseq_sample1_R1.fastq.gz_C_to_T.fastq (FastQ)
+
+Now running 2 instances of Bowtie 2 against the bisulfite genome of /home/julia/github/TFM-SnakeMake/snakemake/data/ with the specified options: -q --score-min L,0,-0.2 --ignore-quals
+
+Now starting the Bowtie 2 aligner for CTreadCTgenome (reading in sequences from bsseq_sample1_R1.fastq.gz_C_to_T.fastq with options -q --score-min L,0,-0.2 --ignore-quals --norc)
+Using Bowtie 2 index: /home/julia/github/TFM-SnakeMake/snakemake/data/Bisulfite_Genome/CT_conversion/BS_CT
+
+Found first alignment:	NB501178:372:HGN3GBGX9:4:23612:3584:18003_1:N:0:ATCACGTT	4	*	0	0	*	*	0	0	AAGAAGAGTGAGGAGTTTGGATTAAATTTATGATTTTTAGTAAATGAAGGAGGGTAGAGAAAATGAAGGAAAAGA	AAAAAEEEEEEEEEEEEAEEEAEEEE/EE6EAEEEEEEEEEAEEE/AEEEEE/EEE/AAEEE//E/E/EEEEEEE	YT:Z:UU
+Now starting the Bowtie 2 aligner for CTreadGAgenome (reading in sequences from bsseq_sample1_R1.fastq.gz_C_to_T.fastq with options -q --score-min L,0,-0.2 --ignore-quals --nofw)
+Using Bowtie 2 index: /home/julia/github/TFM-SnakeMake/snakemake/data/Bisulfite_Genome/GA_conversion/BS_GA
+
+Found first alignment:	NB501178:372:HGN3GBGX9:4:23612:3584:18003_1:N:0:ATCACGTT	4	*	0	0	*	*	0	0	AAGAAGAGTGAGGAGTTTGGATTAAATTTATGATTTTTAGTAAATGAAGGAGGGTAGAGAAAATGAAGGAAAAGA	AAAAAEEEEEEEEEEEEAEEEAEEEE/EE6EAEEEEEEEEEAEEE/AEEEEE/EEE/AAEEE//E/E/EEEEEEE	YT:Z:UU
+
+>>> Writing bisulfite mapping results to /home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1.bam <<<
+
+Unmapped sequences will be written to /home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1_unmapped_reads.fq.gz
+Ambiguously mapping sequences will be written to /home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1_ambiguous_reads.fq.gz
+
+Reading in the sequence file data/samples/bsseq_sample1_R1.fastq.gz
+5000 reads; of these:
+  5000 (100.00%) were unpaired; of these:
+    4980 (99.60%) aligned 0 times
+    20 (0.40%) aligned exactly 1 time
+    0 (0.00%) aligned >1 times
+0.40% overall alignment rate
+5000 reads; of these:
+  5000 (100.00%) were unpaired; of these:
+    4984 (99.68%) aligned 0 times
+    16 (0.32%) aligned exactly 1 time
+    0 (0.00%) aligned >1 times
+0.32% overall alignment rate
+Processed 5000 sequences in total
+
+
+Successfully deleted the temporary file bsseq_sample1_R1.fastq.gz_C_to_T.fastq
+
+Final Alignment report
+======================
+Sequences analysed in total:	5000
+Number of alignments with a unique best hit from the different alignments:	24
+Mapping efficiency:	0.5%
+
+Sequences with no alignments under any condition:	4970
+Sequences did not map uniquely:	6
+Sequences which were discarded because genomic sequence could not be extracted:	0
+
+Number of sequences with unique best (first) alignment came from the bowtie output:
+CT/CT:	10	((converted) top strand)
+CT/GA:	14	((converted) bottom strand)
+GA/CT:	0	(complementary to (converted) top strand)
+GA/GA:	0	(complementary to (converted) bottom strand)
+
+Number of alignments to (merely theoretical) complementary strands being rejected in total:	0
+
+Final Cytosine Methylation Report
+=================================
+Total number of C's analysed:	272
+
+Total methylated C's in CpG context:	0
+Total methylated C's in CHG context:	0
+Total methylated C's in CHH context:	0
+Total methylated C's in Unknown context:	0
+
+Total unmethylated C's in CpG context:	36
+Total unmethylated C's in CHG context:	28
+Total unmethylated C's in CHH context:	208
+Total unmethylated C's in Unknown context:	0
+
+C methylated in CpG context:	0.0%
+C methylated in CHG context:	0.0%
+C methylated in CHH context:	0.0%
+Can't determine percentage of methylated Cs in Unknown context (CN or CHN) if value was 0
+
+
+Bismark completed in 0d 0h 0m 6s
+
+====================
+Bismark run complete
+====================
+
+Now calculating observed and expected nucleotide coverage statistics... 
+
+--genome /home/julia/github/TFM-SnakeMake/snakemake/data/ --dir '/home/julia/github/TFM-SnakeMake/snakemake/bams/' --samtools_path /home/julia/github/TFM-SnakeMake/snakemake/.snakemake/conda/a966d1f83a5f680e71882dce809a88e1/bin/samtools /home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1.bam
+Summary of parameters for nucleotide coverage report:
+=====================================================
+Output directory:			>/home/julia/github/TFM-SnakeMake/snakemake/bams/<
+Parent directory:			>/home/julia/github/TFM-SnakeMake/snakemake/<
+Genome directory:			>/home/julia/github/TFM-SnakeMake/snakemake/data/<
+Samtools installation:			>/home/julia/github/TFM-SnakeMake/snakemake/.snakemake/conda/a966d1f83a5f680e71882dce809a88e1/bin/samtools<
+
+Now reading in and storing sequence information of the genome specified in: /home/julia/github/TFM-SnakeMake/snakemake/data/
+
+chr chloroplast (155461 bp)
+chr I (230218 bp)
+
+Stored sequence information of 2 chromosomes/scaffolds in total
+
+==================================================================
+Mono- and di-nucleotide coverage will now be written into a report
+==================================================================
+
+Detected file 'genomic_nucleotide_frequencies.txt' in the genome folder /home/julia/github/TFM-SnakeMake/snakemake/data/ already. Using nucleotide frequencies contained therein ...
+============================================================================================================================================================================================
+
+
+Calculating read frequencies from file '/home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1.bam'
+==========================================================================================
+Determined the file to be single-end
+
+
+Printing nucleotide stats to >> /home/julia/github/TFM-SnakeMake/snakemake/bams/bsseq_sample1_R1.nucleotide_stats.txt <<
+Final Stage: Calculating averages
+=================================
+
+(di-)nucleotide	count sample	percent sample	count genomic	percent genomic	coverage
+A	640	35.28	63894	30.23	0.010
+C	274	15.10	41640	19.70	0.007
+G	314	17.31	42217	19.97	0.007
+T	586	32.30	63626	30.10	0.009
+AA	266	14.86	21686	10.27	0.012
+AC	64	3.58	11463	5.43	0.006
+AG	114	6.37	12561	5.95	0.009
+AT	190	10.61	18136	8.59	0.010
+CA	98	5.47	14085	6.67	0.007
+CC	64	3.58	8631	4.09	0.007
+CG	34	1.90	6679	3.16	0.005
+CT	70	3.91	12172	5.76	0.006
+GA	108	6.03	13288	6.29	0.008
+GC	54	3.02	8485	4.02	0.006
+GG	54	3.02	8701	4.12	0.006
+GT	94	5.25	11673	5.53	0.008
+TA	162	9.05	14797	7.01	0.011
+TC	90	5.03	12992	6.15	0.007
+TG	108	6.03	14204	6.73	0.008
+TT	220	12.29	21597	10.23	0.010
+Finished bam2nuc calculation ...
+

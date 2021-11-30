@@ -1,17 +1,30 @@
-SAMPLES = ["A","B"]
+REFERENCE ="data/genome.fa"
 #Workflow con ficheros fastqc ejemplo.
 #Cambiar por los reales para las pruebas
+
+configfile: 'config.yaml'
+SAMPLES=["bsseq_sample1_R1","bsseq_sample1_R2"]
+#GENOMES=["chloroplast"]
+
 rule all:
     input:
-        "qc/fastqc/A.html",
-        "qc/fastqc/multiqc_report.html",
-        "logs/bismark/A.log",
-        '/qualimap/A_qualimapReport.html'
+#        "qc/fastqc/bsseq_sample1_R1.html",
+#        "mapped_reads/bsseq_sample1_R1.bam"
+#        "trimmed/bsseq_sample1_R1.fastq.gz"
+        "qualimap/bsseq_sample1_R1_qualimapReport.html"
+#        expand("trimmed/{sample}.fq.gz", sample=config["samples"])
+#        "qc/multiqc.html"
+#        "saved/Bisulfite_Genome"
+#        "saved/genomic_nucleotide_frequencies.txt"
+#        "bams/bsseq_sample1_R1.bam"
+#        "bismark/A_bismark_pe.bam"
+#        "logs/bismark/A.log"
 
 rule fastqc:
     message: "Performing FastQC..."
     input:
-        "data/samples/{sample}.fastq"
+        #"data/samples/{sample}.fastq"
+        expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
     output:
         html="qc/fastqc/{sample}.html",
         zip="qc/fastqc/{sample}_fastqc.zip"
@@ -20,85 +33,126 @@ rule fastqc:
         "logs/fastqc/{sample}_fastqc.log"
     threads: 1
     wrapper:
-        "v0.80.1/bio/fastqc"
+        "0.80.2/bio/fastqc"
 
-rule trim_galore_se:
+rule trim_galore:
     message: "Performing Trimming..."
     input:
-        "data/samples/{sample}.fastq",
+        r1=expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
+        #r1="data/samples/{sample}.fastq"
     output:
-        "trimmed/{sample}.fq.gz",
-        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
+        #expand("trimmed/{sample}.fq.gz", sample=config["samples"]),
+        #expand("trimmed/{sample}_gz_trimming_report.txt", sample=config["samples"])
+        "trimmed/{sample}.fastq.gz",
+        "trimmed/{sample}_gz_trimming_report.txt"
     params:
-        extra="--illumina -q 20",
+        extra="--illumina -q 20"
     log:
-        "logs/trim_galore/{sample}.log",
-    wrapper:
-            "v0.80.1/bio/trim_galore/se"
-
-rule run_multiqc:
-    input:
-        "trimmed/A.fq.gz",
-        "data/samples/A.fastq"
-        #"trimmed/B.fq.gz"
-    output:
-        "qc/fastqc/multiqc_report.html"
+        #expand("logs/trim_galore/{sample}.log", sample=config["samples"])
+        "logs/trim_galore/{sample}.log"
     shell:
-        "multiqc qc/fastqc/"
+        """
+        trim_galore {input.r1} --output_dir trimmed
+        """
+#    wrapper:
+#        "0.80.2/bio/trim_galore/se"
+#    #conda:
+#    #    "enviroment.yaml"
+#    #script:
+#    #    "scripts/trim_galore.py"
+#
+#
+##    shell:
+##    #    "trim_galore --gzip -o A/trimmmed/ --paired {input}"
+##        "trim_galore {input} -o ../results/trimmed/ {params} --cores {threads} &> {log}"
+    #wrapper:
+        #"http://dohlee-bio.info:9193/trim-galore"
+     #  "0.80.2/bio/trim_galore/se"
+#
 
+rule multiqc:
+    input:
+        expand("trimmed/{sample}_trimmed.fq.gz", sample=SAMPLES),
+        expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
+        #"trimmed/A_trimmed.fq.gz",
+        #"data/samples/A.fastq"
+    output:
+        "qc/multiqc.html"
+    log:
+        "logs/multiqc.log"
+    wrapper:
+        "0.80.2/bio/multiqc"
+
+rule bismark_genome_preparation_fa:
+    input:
+        read="data/genome.fa"
+    output:
+        "saved/Bisulfite_Genome"
+    log:
+        "logs/indexes/Bisulfite_Genome.log"
+    wrapper:
+        "0.80.2/bio/bismark/bismark_genome_preparation"
+
+rule bam2nuc_for_genome:
+    input:
+        genome_fa="data/genome.fa"
+    output:
+        "saved/genomic_nucleotide_frequencies.txt"
+    log:
+        "logs/indexes/genome/genomic_nucleotide_frequencies.txt.log"
+    wrapper:
+        "0.80.2/bio/bismark/bam2nuc"
 
 rule bismark_align:
     message: "Performing alignment..."
     input:
-        "data/samples/{sample}.fastq",
-        "data/genome.fa"
+        fq=expand("data/samples/{sample}.fastq.gz", sample=SAMPLES),
+        genome="data/chloroplast.fa",
+        #genome=expand("data/{genome}.fa", sample=GENOMES),
+        bismark_indexes_dir="data/Bisulfite_Genome",
+        genomic_freq="data/genomic_nucleotide_frequencies.txt"
+        #genome="data/genome.fa"
     output:
-        "bismark/{sample}_bismark_pe.bam",
-        "bismark/{sample}_bismark_PE_report.txt",
-        "bismark/{sample}_bismark_pe.nucleotide_stats.txt"
+        bam="bams/{sample}.bam",
+        report="bams/{sample}_SE_report.txt",
+        nucleotide_stats="bams/{sample}_.nucleotide_stats.txt",
+        bam_unmapped="bams/{sample}_unmapped_reads.fq.gz",
+        ambiguous="bams/{sample}_ambiguous_reads.fq.gz"
     log:
-        "logs/bismark/{sample}.log",
+        "logs/bams/{sample}.log"
     params:
         # optional params string
         extra=' --ambiguous --unmapped --nucleotide_coverage',
-        basename='{sample}_'
+        basename='{sample}'
     wrapper:
-        "v0.80.1/bio/bismark/bismark"
-
-#rule bwa_map:
-#    input:
-#        "data/genome.fa",
-#        "data/samples/{sample}.fastq"
-#    output:
-#        "mapped_reads/{sample}.bam"
+        "0.80.2/bio/bismark/bismark"
 #    shell:
-#        "bwa mem {input} | samtools view -Sb - > {output}"
+#        """
+#        bismark --bowtie1 --multicore 2 -n 1 -l 28 --gzip --nucleotide_coverage {params.ref} {input.r1}
+#        """
+#    conda:
+#    #    "environment.yaml"
+#    wrapper:
+#        "http://dohlee-bio.info:9193/bismark/genome-preparation"
+#    shell:
+#        """
+#        bismark --bowtie2 --multicore 2 -n 1 -l 28 --gzip --nucleotide_coverage {params.ref} {input.r1} --output_dir saved
+#        """
+#    wrapper:
+#        "0.80.2/bio/bismark/bismark"
+#    params:
+#        # optional params string
+#        extra=' --ambiguous --unmapped --nucleotide_coverage',
 
 
 rule qualimap:
     input:
         # BAM aligned, splicing-aware, to reference genome
-        "bismark/{sample}_bismark_pe.bam",
+        #"bismark/{sample}_bismark_pe.bam",
+        "bams/{sample}.bam"
         # GTF containing transcript, gene, and exon data
     output:
-        '/qualimap/{sample}_qualimapReport.html'
-    wrapper:
-        "v0.80.1/bio/bismark/bismark"
+        "qualimap/{sample}_qualimapReport.html"
 
-#rule mark_duplicates:
-#    input:
-#        "mapped/{sample}.bam"
-    # optional to specify a list of BAMs; this has the same effect
-    # of marking duplicates on separate read groups for a sample
-    # and then merging
-#    output:
-#        bam="dedup/{sample}.bam",
-#        metrics="dedup/{sample}.metrics.txt"
-#    log:
-#        "logs/picard/dedup/{sample}.log"
-#    params:
-#        extra="REMOVE_DUPLICATES=true"
-#    resources:
-#        mem_mb=1024
-#    wrapper:
-#        "v0.80.1/bio/picard/markduplicates"
+    wrapper:
+        "0.80.2/bio/qualimap/rnaseq"
