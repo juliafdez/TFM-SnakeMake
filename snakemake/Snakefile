@@ -1,22 +1,28 @@
-REFERENCE ="data/genome.fa"
+#REFERENCE ="data/genome.fa"
 #Workflow con ficheros fastqc ejemplo.
 #Cambiar por los reales para las pruebas
 
-configfile: 'config.yaml'
-SAMPLES=["bsseq_sample1_R1","bsseq_sample1_R2"]
-#GENOMES=["chloroplast"]
-
+#configfile: 'config.yaml'
+#SAMPLES=["bsseq_sample1_R1","bsseq_sample1_R2", "bsseq_sample2_R1","A"]
+SAMPLES=["SRR1272791_1", "SRR1272791_2"]
 rule all:
     input:
-#        "qc/fastqc/bsseq_sample1_R1.html",
+        "qc/fastqc/SRR1272791_1.html",
+        "qc/fastqc/SRR1272791_2.html",
 #        "mapped_reads/bsseq_sample1_R1.bam"
-#        "trimmed/bsseq_sample1_R1.fastq.gz"
-#        "qc/multiqc.html"
+#        "trimmed/SRR1272791_1.fastq.gz",
+#        "trimmed/SRR1272791_1.fastq.gz",
+        "qc/multiqc.html",
 #        "data/Bisulfite_Genome",
-#        "data/genomic_nucleotide_frequencies.txt"
-#        "bams/bsseq_sample1_R1.bam"
-        "meth/bsseq_sample1_R1.M-bias.txt"
-#        "qualimap/bsseq_sample1_R1_qualimapReport.html"
+#        "data/genomic_nucleotide_frequencies.txt",
+        "bams/SRR1272791_1.bam",
+        "bams/SRR1272791_2.bam",
+        "meth/SRR1272791_1.M-bias.txt",
+        "meth/SRR1272791_2.M-bias.txt",
+        "qualimap/SRR1272791_1.qualimapReport.html",
+        "qualimap/SRR1272791_2.qualimapReport.html",
+        "dedup/SRR1272791_1.deduplicated.bam",
+        "dedup/SRR1272791_2.deduplicated.bam"
 #        "dedup/bsseq_sample1_R1.bam"
 
 rule fastqc:
@@ -84,7 +90,7 @@ rule multiqc:
 
 rule bismark_genome_preparation_fa:
     input:
-        read="data/genome.fa"
+        read="data/chr22.fa"
     output:
         directory("data/Bisulfite_Genome")
     log:
@@ -94,7 +100,7 @@ rule bismark_genome_preparation_fa:
 
 rule bam2nuc_for_genome:
     input:
-        genome_fa="data/genome.fa"
+        genome_fa="data/release_104/Homo_sapiens.GRCh38.dna.chromosome.22.fa"
     output:
         "data/genomic_nucleotide_frequencies.txt"
     log:
@@ -106,10 +112,10 @@ rule bismark_align:
     message: "Performing alignment..."
     input:
         fq=expand("data/samples/{sample}.fastq.gz", sample=SAMPLES),
-        genome="data/chloroplast.fa",
+        genome="data/release_104/Homo_sapiens.GRCh38.dna.chromosome.22.fa",
         #genome=expand("data/{genome}.fa", sample=GENOMES),
-        bismark_indexes_dir="data/Bisulfite_Genome",
-        genomic_freq="data/genomic_nucleotide_frequencies.txt"
+        bismark_indexes_dir="data/release_104/Bisulfite_Genome",
+        genomic_freq="data/release_104/genomic_nucleotide_frequencies.txt"
         #genome="data/genome.fa"
     output:
         bam="bams/{sample}.bam",
@@ -178,27 +184,21 @@ rule qualimap:
         "bams/{sample}.bam"
         # GTF containing transcript, gene, and exon data
     output:
-        "qualimap/{sample}_qualimapReport.html"
+        "qualimap/{sample}.qualimapReport.html"
     log:
         "logs/qualimap/{sample}.log"
     wrapper:
-        "0.80.2/bio/qualimap/rnaseq"
+        "0.80.2/bio/qualimap/bsseq"
 
 #paso opcional deduplicates con picard
-rule mark_duplicates:
-    input:
-        "bams/{sample}.bam"
-    # optional to specify a list of BAMs; this has the same effect
-    # of marking duplicates on separate read groups for a sample
-    # and then merging
+rule deduplicate_bismark:
+    input: "bams/{sample}.bam"
     output:
-        bam="dedup/{sample}.bam",
-        metrics="dedup/{sample}.metrics.txt"
+        bam="dedup/{sample}.deduplicated.bam",
+        report="dedup/{sample}.deduplication_report.txt",
     log:
-        "logs/picard/dedup/{sample}.log"
+        "logs/bams/{sample}.deduplicated.log",
     params:
-        extra="REMOVE_DUPLICATES=true"
-    resources:
-        mem_mb=1024
+        extra=""  # optional params string
     wrapper:
-        "0.80.2/bio/picard/markduplicates"
+        "0.80.2/bio/bismark/deduplicate_bismark"
