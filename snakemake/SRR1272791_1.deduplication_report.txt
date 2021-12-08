@@ -1,0 +1,7 @@
+
+Total number of alignments analysed in bams/SRR1272791_1.bam:	993790
+Total number duplicated alignments removed:	107046 (10.77%)
+Duplicated alignments were found at:	49197 different position(s)
+
+Total count of deduplicated leftover sequences: 886744 (89.23% of total)
+
