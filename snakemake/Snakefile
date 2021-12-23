@@ -3,57 +3,61 @@
 #Cambiar por los reales para las pruebas
 REFERENCE = "/data/release_104/"
 #configfile: 'config.yaml'
-SAMPLES=["SRR1272792"]
+SAMPLES=["SRR1272793"]
 #SAMPLES=["SRR1272792_1", "SRR1272792_2"]
 rule all:
     input:
-#        "qc/fastqc/SRR1272791_1.html",
-#        "qc/fastqc/SRR1272791_2.html",
-#        "mapped_reads/bsseq_sample1_R1.bam"
+        "qc/fastqc/SRR1272793_1_fastqc.html",
+        "qc/fastqc/SRR1272793_2_fastqc.html",
+        "trimmed/SRR1272793_1_val_1.fq.gz",
 #        "trimmed/SRR1272791_1.fastq.gz",
-#        "trimmed/SRR1272791_1.fastq.gz",
-#        "qc/multiqc.html",
-#        "data/samples/Bisulfite_Genome",
-#        "data/genomic_nucleotide_frequencies.txt",
-#        "bams/SRR1272792.bam"
-#        "bams/SRR1272792.bam"
-#        "trimmed/SRR1272792.1_val_1.fq.gz"
-#        "sort/SRR1272792_1_trimmed_bismark.deduplicated.sorted.bam",
-#        "sort/SRR1272792_2_trimmed_bismark.deduplicated.sorted.bam",
-#        "meth/SRR1272792.M-bias.txt"
-#        "meth/SRR1272792_2.M-bias.txt"
-#        "dedup/SRR1272792_1.deduplicated.bam",
-#        "dedup/SRR1272792_2.deduplicated.bam",
-#        "qc/meth/SRR1272791_1_gen.bismark2report.html"
-#        "qc/SRR1272792.bismark2summary.html"
-#        "bams/SRR1272792_.nucleotide_stats.txt"
-#        "dedup/SRR1272792.deduplicated.bam"
-        "dmr_dms/solucion/plots.pdf"
-
+#        "qc/fastqc/SRR1272793_1_val_1_fastqc.html",
+#        "qc/fastqc/SRR1272793_2_val_2_fastqc.html",
+        "qc/multiqc_report.html",
+##        "data/samples/Bisulfite_Genome",
+##        "data/genomic_nucleotide_frequencies.txt",
+#        "bams/SRR1272793.bam",
+##        "trimmed/SRR1272792.1_val_1.fq.gz"
+##        "sort/SRR1272792_1_trimmed_bismark.deduplicated.sorted.bam",
+##        "sort/SRR1272792_2_trimmed_bismark.deduplicated.sorted.bam",
+#        "meth/SRR1272793.M-bias.txt",
+#        "dedup/SRR1272793.deduplicated.bam",
+##        "dedup/SRR1272792_2.deduplicated.bam",
+#        "qc/meth/SRR1272793_gen.bismark2report.html",
+##        "qc/SRR1272793.bismark2summary.html"
+##        "bams/SRR1272792_.nucleotide_stats.txt"
+##        "dedup/SRR1272792.deduplicated.bam"
+#        "dmr_dms/solucion/plots.pdf"
+#
 rule fastqc:
     message: "Performing FastQC..."
     input:
         #"data/samples/{sample}.fastq"
-        expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
+        expand("data/samples/{sample}_1.fastq.gz", sample=SAMPLES),
+        expand("data/samples/{sample}_2.fastq.gz", sample=SAMPLES)
     output:
-        html="qc/fastqc/{sample}.html",
-        zip="qc/fastqc/{sample}_fastqc.zip"
+        html="qc/fastqc/{sample}_1_fastqc.html",
+        zip="qc/fastqc/{sample}_1_fastqc.zip",
+        html2="qc/fastqc/{sample}_2_fastqc.html",
+        zip2="qc/fastqc/{sample}_2_fastqc.zip"
     params: "--quiet"
     log:
         "logs/fastqc/{sample}_fastqc.log"
-    threads: 1
-    wrapper:
-        "0.80.2/bio/fastqc"
+    threads: 4
+    shell:
+        "fastqc -o qc/fastqc -t {threads} {input}"
+#    wrapper:
+#        "0.80.2/bio/fastqc"
 
 rule trim_galore_pe:
     input:
         expand("data/samples/{sample}_1.fastq.gz", sample=SAMPLES),
         expand("data/samples/{sample}_2.fastq.gz", sample=SAMPLES)
     output:
-        "trimmed/{sample}.1_val_1.fq.gz",
-        "trimmed/{sample}.1.fastq.gz_trimming_report.txt",
-        "trimmed/{sample}.2_val_2.fq.gz",
-        "trimmed/{sample}.2.fastq.gz_trimming_report.txt",
+        "trimmed/{sample}_1_val_1.fq.gz",
+        "trimmed/{sample}_1.fastq.gz_trimming_report.txt",
+        "trimmed/{sample}_2_val_2.fq.gz",
+        "trimmed/{sample}_2.fastq.gz_trimming_report.txt",
     params:
         extra="--illumina -q 20",
     log:
@@ -61,54 +65,42 @@ rule trim_galore_pe:
     wrapper:
         "0.80.2/bio/trim_galore/pe"
 
-
-#rule trim_galore:
-#    message: "Performing Trimming..."
-#    input:
-#        r1=expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
-#        #r1="data/samples/{sample}.fastq"
-#    output:
-#        #expand("trimmed/{sample}.fq.gz", sample=config["samples"]),
-#        #expand("trimmed/{sample}_gz_trimming_report.txt", sample=config["samples"])
-#        "trimmed/{sample}.fastq.gz",
-#        "trimmed/{sample}_gz_trimming_report.txt"
-#    params:
-#        extra="--illumina -q 20"
-#    log:
-#        #expand("logs/trim_galore/{sample}.log", sample=config["samples"])
-#        "logs/trim_galore/{sample}.log"
-#    shell:
-#        """
-#        trim_galore {input.r1} --output_dir trimmed
-#        """
+rule fastqc_trimmed:
+    message: "Performing FastQC after Trimming..."
+    input:
+        #"data/samples/{sample}.fastq"
+        expand("trimmed/{sample}_1_val_1.fq.gz", sample=SAMPLES),
+        expand("trimmed/{sample}_2_val_2.fq.gz", sample=SAMPLES)
+    output:
+        html="qc/fastqc/trimmed/{sample}_1_val_1_fastqc.html",
+        zip="qc/fastqc/trimmed/{sample}_1_val_1_fastqc.zip",
+        html2="qc/fastqc/trimmed/{sample}_2_val_2_fastqc.html",
+        zip2="qc/fastqc/trimmed/{sample}_2_val_2_fastqc.zip"
+    params: "--quiet"
+    log:
+        "logs/fastqc/{sample}_fastqc.log"
+    threads: 4
+    shell:
+        "fastqc -o qc/fastqc -t {threads} {input}"
 #    wrapper:
-#        "0.80.2/bio/trim_galore/se"
-#    #conda:
-#    #    "enviroment.yaml"
-#    #script:
-#    #    "scripts/trim_galore.py"
-#
-#
-##    shell:
-##    #    "trim_galore --gzip -o A/trimmmed/ --paired {input}"
-##        "trim_galore {input} -o ../results/trimmed/ {params} --cores {threads} &> {log}"
-    #wrapper:
-        #"http://dohlee-bio.info:9193/trim-galore"
-     #  "0.80.2/bio/trim_galore/se"
-#
+#        "0.80.2/bio/fastqc"
 
 rule multiqc:
     input:
-        expand("trimmed/{sample}_trimmed.fq.gz", sample=SAMPLES),
-        expand("data/samples/{sample}.fastq.gz", sample=SAMPLES)
+        expand("qc/fastqc/{sample}_1_fastqc.html", sample=SAMPLES),
+        expand("qc/fastqc/{sample}_2_fastqc.html", sample=SAMPLES),
+        expand("qc/fastqc/{sample}_1_val_1_fastqc.html", sample=SAMPLES),
+        expand("qc/fastqc/{sample}_2_val_2_fastqc.html", sample=SAMPLES),
         #"trimmed/A_trimmed.fq.gz",
         #"data/samples/A.fastq"
     output:
-        "qc/multiqc.html"
+        "qc/multiqc_report.html"
     log:
         "logs/multiqc.log"
-    wrapper:
-        "0.80.2/bio/multiqc"
+    shell:
+        "multiqc qc/fastqc/ -o qc "
+#    wrapper:
+#        "0.80.2/bio/multiqc"
 
 rule bismark_genome_preparation_fa:
     input:
@@ -125,25 +117,25 @@ rule bismark_genome_preparation_fa:
         "0.80.2/bio/bismark/bismark_genome_preparation"
 
 #pair ended reads
-#rule bismark_align:
-#    message: "Performing alignment..."
-#    input:
-#        fq_1=expand("data/samples/{sample}_1.fastq.gz", sample=SAMPLES),
-#        fq_2=expand("data/samples/{sample}_2.fastq.gz", sample=SAMPLES),
-#        #genome=expand("data/{genome}.fa", sample=GENOMES),
-#        bismark_indexes_dir="data/release_104/Bisulfite_Genome"
-#        #genome="data/genome.fa"
-#    output:
-#        bam="bams/{sample}.bam",
-#        report="bams/{sample}_PE_report.txt"
-#    log:
-#        "logs/bams/{sample}.log"
-#    params:
-#        # optional params string
-#        extra=' --ambiguous --unmapped --nucleotide_coverage',
-#        basename='{sample}'
-#    wrapper:
-#        "0.80.2/bio/bismark/bismark"
+rule bismark_align:
+    message: "Performing alignment..."
+    input:
+        fq_1=expand("trimmed/{sample}_1_val_1.fq.gz", sample=SAMPLES),
+        fq_2=expand("trimmed/{sample}_2_val_2.fq.gz", sample=SAMPLES),
+        #genome=expand("data/{genome}.fa", sample=GENOMES),
+        bismark_indexes_dir="data/release_104/Bisulfite_Genome"
+        #genome="data/genome.fa"
+    output:
+        bam="bams/{sample}.bam",
+        report="bams/{sample}_PE_report.txt"
+    log:
+        "logs/bams/{sample}.log"
+    params:
+        # optional params string
+        extra=' --ambiguous --unmapped --nucleotide_coverage',
+        basename='{sample}'
+    wrapper:
+        "0.80.2/bio/bismark/bismark"
 
 #    shell:
 #        """
@@ -192,35 +184,35 @@ rule sort:
         samtools index {output.sort}
         """
 
-#rule bismark_methylation_extractor:
-#    input:
-#        bam="bams/{sample}.bam"
-#    #"sort/{sample}_trimmed_bismark.deduplicated.sorted.bam"
-#    output:
-#        mbias_r1="qc/meth/{sample}.M-bias_R1.png",
-#        # Only for PE BAMS:
-#        # mbias_r2="qc/meth/{sample}.M-bias_R2.png",
-#
-#        mbias_report="meth/{sample}.M-bias.txt",
-#        splitting_report="meth/{sample}_splitting_report.txt",
-#
-#        # 1-based start, 1-based end ('inclusive') methylation info: % and counts
-#        methylome_CpG_cov="meth_cpg/{sample}.bismark.cov.gz",
-#        # BedGraph with methylation percentage: 0-based start, end exclusive
-#        methylome_CpG_mlevel_bedGraph="meth_cpg/{sample}.bedGraph.gz",
-#
-#        # Primary output files: methylation status at each read cytosine position: (extremely large)
-#        read_base_meth_state_cpg="meth/CpG_context_{sample}.txt.gz",
-#        # * You could merge CHG, CHH using: --merge_non_CpG
-#        read_base_meth_state_chg="meth/CHG_context_{sample}.txt.gz",
-#        read_base_meth_state_chh="meth/CHH_context_{sample}.txt.gz"
-#    log:
-#        "logs/meth/{sample}.log"
-#    params:
-#        output_dir="meth",  # optional output dir
-#        extra="--gzip --comprehensive --bedGraph"  # optional params string
-#    wrapper:
-#        "0.80.2/bio/bismark/bismark_methylation_extractor"
+rule bismark_methylation_extractor:
+    input:
+        bam="bams/{sample}.bam"
+    #"sort/{sample}_trimmed_bismark.deduplicated.sorted.bam"
+    output:
+        mbias_r1="qc/meth/{sample}.M-bias_R1.png",
+        # Only for PE BAMS:
+        # mbias_r2="qc/meth/{sample}.M-bias_R2.png",
+
+        mbias_report="meth/{sample}.M-bias.txt",
+        splitting_report="meth/{sample}_splitting_report.txt",
+
+        # 1-based start, 1-based end ('inclusive') methylation info: % and counts
+        methylome_CpG_cov="meth_cpg/{sample}.bismark.cov.gz",
+        # BedGraph with methylation percentage: 0-based start, end exclusive
+        methylome_CpG_mlevel_bedGraph="meth_cpg/{sample}.bedGraph.gz",
+
+        # Primary output files: methylation status at each read cytosine position: (extremely large)
+        read_base_meth_state_cpg="meth/CpG_context_{sample}.txt.gz",
+        # * You could merge CHG, CHH using: --merge_non_CpG
+        read_base_meth_state_chg="meth/CHG_context_{sample}.txt.gz",
+        read_base_meth_state_chh="meth/CHH_context_{sample}.txt.gz"
+    log:
+        "logs/meth/{sample}.log"
+    params:
+        output_dir="meth",  # optional output dir
+        extra="--gzip --comprehensive --bedGraph"  # optional params string
+    wrapper:
+        "0.80.2/bio/bismark/bismark_methylation_extractor"
 
 rule bam2nuc_for_bam:
     input:
@@ -266,10 +258,10 @@ rule bismark2summary:
 
 rule dmr:
     input:
-        p1="meth_cpg/SRR1272795_1_bismark_bt2_pe.bismark.cov.gz",
-        p2="meth_cpg/SRR1272796_1_bismark_bt2_pe.bismark.cov.gz",
-        p3="meth_cpg/SRR1272797_1_bismark_bt2_pe.bismark.cov.gz",
-        p4="meth_cpg/SRR1272798_1_bismark_bt2_pe.bismark.cov.gz"
+        p1="meth_cpg/SRR1272791_1_bismark_bt2_pe.bismark.cov.gz",
+        p2="meth_cpg/SRR1272792_1_bismark_bt2_pe.bismark.cov.gz",
+        p3="meth_cpg/SRR1272793_1_bismark_bt2_pe.bismark.cov.gz",
+        p4="meth_cpg/SRR1272794_1_bismark_bt2_pe.bismark.cov.gz"
     output:
         out1="dmr_dms/solucion/dmlTest.txt",
         out2="dmr_dms/solucion/dmls.txt",
