@@ -16,3 +16,6 @@ Consta de un workflow realizado con Snakemake para obtener información sobre me
 9. Extraccion de metilación - Bismark
 10. Reporte del alineamiento y la metilación - Bismark
 11. Extracción de los DML/DMR - Paquete DSS (R)
+
+Para poder realizaar la ejecución del workflow se necesita realizar la instalacion de conda.
+Una vez instalado, instalar mediante conda los paquetes fastqc, multiqc y bismark (el cual contiene bismark_align, bismark_methylation_extractor, bismark2report)
