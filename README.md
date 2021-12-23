@@ -6,7 +6,7 @@ Este proyecto es el trabajo final del master en bioinformática y bioestadístic
 Consta de un workflow realizado con Snakemake para obtener información sobre metilación. El workflow consta de los siguientes pasos y tecnologías:
 
 1. Control de calidad de las secuencias - FastQC
-2. Trimmin de las secuencias - Trim Galore!
+2. Trimming de las secuencias - Trim Galore!
 3. Control de calidad del trimming - FastQC
 4. Comparación de calidad de las secuencias antes y después del trimming - MultiQC
 5. Preparación del genoma de referencia - Bismark
